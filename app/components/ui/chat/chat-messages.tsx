@@ -4,15 +4,8 @@ import { ChatMessage, ChatMessages, useChatUI } from '@llamaindex/chat-ui'
 import { ChatMessageAvatar } from './chat-avatar'
 import { ChatMessageContent } from './chat-message-content'
 import { ChatStarter } from './chat-starter'
-import { ComponentDef } from './custom/events/types'
 
-export default function CustomChatMessages({
-  componentDefs,
-  appendError,
-}: {
-  componentDefs: ComponentDef[]
-  appendError: (error: string) => void
-}) {
+export default function CustomChatMessages() {
   const { messages } = useChatUI()
 
   return (
@@ -26,8 +19,6 @@ export default function CustomChatMessages({
           >
             <ChatMessageAvatar />
             <ChatMessageContent
-              componentDefs={componentDefs}
-              appendError={appendError}
             />
             <ChatMessage.Actions />
           </ChatMessage>
