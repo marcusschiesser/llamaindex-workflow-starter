@@ -1,8 +1,9 @@
 import fs from "fs";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { promisify } from "util";
 
 export async function GET(
+  request: NextRequest,
 	{ params }: { params: Promise<{ slug: string[] }> },
 ) {
 	const filePath = (await params).slug.join("/");

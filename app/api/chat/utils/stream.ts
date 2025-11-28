@@ -154,26 +154,6 @@ export class ServerAdapter {
 	static readonly encoder = new TextEncoder();
 
 	/**
-	 * download resources in background if detected
-	 */
-	static processDownloadResources() {
-		return new TransformStream({
-			async transform(event, controller) {
-				if (sourceEvent.include(event)) {
-					// if source event is detected and having llamaCloud files, download them in background
-					controller.enqueue(sourceEvent);
-					downloadLlamaCloudFilesFromNodes(event.data.data.nodes);
-					return;
-				}
-
-				controller.enqueue(event);
-			},
-		});
-	}
-
-
-
-	/**
 	 * Accumulate text parts from stream and do post processing such as suggest next questions
 	 */
 	static postActions(options?: {

@@ -73,7 +73,6 @@ export async function POST(req: NextRequest) {
 			.pipeThrough(AgentWorkflowAdapter.processStreamEvents()) // convert agentStreamEvent to textDeltaEvent
 			.pipeThrough(AgentWorkflowAdapter.processToolCallEvents()) // convert agentToolCallEvent to runEvent with loading
 			.pipeThrough(AgentWorkflowAdapter.processToolCallResultEvents(parsers)) // parse agentToolCallResultEvent to events
-			.pipeThrough(ServerAdapter.processDownloadResources()) // download resources in background if detected
 			.pipeThrough(ServerAdapter.postActions({ chatHistory, enableSuggestion })) // actions on stream finished
 			.pipeThrough(ServerAdapter.transformToSSE()); // transform all events to SSE format
 
