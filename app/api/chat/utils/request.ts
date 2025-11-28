@@ -1,57 +1,57 @@
-import type { IncomingMessage, ServerResponse } from 'http'
+import type { IncomingMessage, ServerResponse } from "http";
 
 export async function parseRequestBody(request: IncomingMessage) {
-  const body = new Promise(resolve => {
-    const bodyParts: Buffer[] = []
-    let body: string
+  const body = new Promise((resolve) => {
+    const bodyParts: Buffer[] = [];
+    let body: string;
     request
-      .on('data', chunk => {
-        bodyParts.push(chunk)
+      .on("data", (chunk) => {
+        bodyParts.push(chunk);
       })
-      .on('end', () => {
-        body = Buffer.concat(bodyParts).toString()
-        resolve(body)
-      })
-  }) as Promise<string>
-  const data = await body
-  return JSON.parse(data)
+      .on("end", () => {
+        body = Buffer.concat(bodyParts).toString();
+        resolve(body);
+      });
+  }) as Promise<string>;
+  const data = await body;
+  return JSON.parse(data);
 }
 
 export function sendJSONResponse(
   response: ServerResponse,
   statusCode: number,
-  body: Record<string, unknown> | string | Array<unknown>
+  body: Record<string, unknown> | string | Array<unknown>,
 ) {
-  response.statusCode = statusCode
-  response.setHeader('Content-Type', 'application/json')
-  response.end(typeof body === 'string' ? body : JSON.stringify(body))
+  response.statusCode = statusCode;
+  response.setHeader("Content-Type", "application/json");
+  response.end(typeof body === "string" ? body : JSON.stringify(body));
 }
 
 export async function pipeStreamToResponse(
   response: ServerResponse,
-  stream: ReadableStream
+  stream: ReadableStream,
 ) {
-  if (!stream) return
+  if (!stream) return;
 
   // Set SSE headers
-  response.setHeader('Content-Type', 'text/event-stream')
-  response.setHeader('Connection', 'keep-alive')
-  response.setHeader('Cache-Control', 'no-cache')
+  response.setHeader("Content-Type", "text/event-stream");
+  response.setHeader("Connection", "keep-alive");
+  response.setHeader("Cache-Control", "no-cache");
 
-  const reader = stream.getReader()
+  const reader = stream.getReader();
   const read = async () => {
     try {
       while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        response.write(value)
+        const { done, value } = await reader.read();
+        if (done) break;
+        response.write(value);
       }
     } catch (error) {
-      throw error
+      throw error;
     } finally {
-      response.end()
+      response.end();
     }
-  }
+  };
 
-  read()
+  read();
 }

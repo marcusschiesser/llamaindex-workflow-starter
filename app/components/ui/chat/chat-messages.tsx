@@ -1,12 +1,12 @@
-'use client'
+"use client";
 
-import { ChatMessage, ChatMessages, useChatUI } from '@llamaindex/chat-ui'
-import { ChatMessageAvatar } from './chat-avatar'
-import { ChatMessageContent } from './chat-message-content'
-import { ChatStarter } from './chat-starter'
+import { ChatMessage, ChatMessages, useChatUI } from "@llamaindex/chat-ui";
+import { ChatMessageAvatar } from "./chat-avatar";
+import { ChatMessageContent } from "./chat-message-content";
+import { ChatStarter } from "./chat-starter";
 
 export default function CustomChatMessages() {
-  const { messages } = useChatUI()
+  const { messages } = useChatUI();
 
   return (
     <ChatMessages>
@@ -18,8 +18,7 @@ export default function CustomChatMessages() {
             isLast={index === messages.length - 1}
           >
             <ChatMessageAvatar />
-            <ChatMessageContent
-            />
+            <ChatMessageContent />
             <ChatMessage.Actions />
           </ChatMessage>
         ))}
@@ -31,5 +30,5 @@ export default function CustomChatMessages() {
       </ChatMessages.List>
       <ChatStarter />
     </ChatMessages>
-  )
+  );
 }

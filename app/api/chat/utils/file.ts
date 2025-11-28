@@ -1,4 +1,4 @@
-import path from 'node:path'
+import path from "node:path";
 
 /**
  * Constructs a stored file path from an ID and optional directory.
@@ -14,17 +14,16 @@ export function getStoredFilePath({
   id,
   saveDir,
 }: {
-  id: string
-  saveDir?: string
+  id: string;
+  saveDir?: string;
 }): string {
   // Validate id to prevent path traversal and invalid characters
-  if (id.includes('/') || id.includes('\\') || id.includes('..')) {
+  if (id.includes("/") || id.includes("\\") || id.includes("..")) {
     throw new Error(
-      'Invalid file id: path traversal or separators are not allowed.'
-    )
+      "Invalid file id: path traversal or separators are not allowed.",
+    );
   }
   // Use path.join to construct the default directory for cross-platform compatibility
-  const directory = saveDir ?? path.join('output', 'uploaded')
-  return path.join(directory, id)
+  const directory = saveDir ?? path.join("output", "uploaded");
+  return path.join(directory, id);
 }
-

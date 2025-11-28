@@ -1,12 +1,12 @@
-'use client'
+"use client";
 
-import { ChatInput, useChatUI, useFile } from '@llamaindex/chat-ui'
-import { DocumentInfo, ImagePreview } from '@llamaindex/chat-ui/widgets'
-import { getConfig } from '../lib/utils'
+import { ChatInput, useChatUI, useFile } from "@llamaindex/chat-ui";
+import { DocumentInfo, ImagePreview } from "@llamaindex/chat-ui/widgets";
+import { getConfig } from "../lib/utils";
 
 export default function CustomChatInput() {
-  const { requestData, isLoading, input } = useChatUI()
-  const uploadAPI = getConfig('UPLOAD_API') ?? ''
+  const { requestData, isLoading, input } = useChatUI();
+  const uploadAPI = getConfig("UPLOAD_API") ?? "";
   const {
     image,
     setImage,
@@ -15,7 +15,7 @@ export default function CustomChatInput() {
     removeDoc,
     reset,
     getAttachments,
-  } = useFile({ uploadAPI })
+  } = useFile({ uploadAPI });
 
   /**
    * Handles file uploads. Overwrite to hook into the file upload behavior.
@@ -24,23 +24,23 @@ export default function CustomChatInput() {
   const handleUploadFile = async (file: File) => {
     // There's already an image uploaded, only allow one image at a time
     if (image) {
-      alert('You can only upload one image at a time.')
-      return
+      alert("You can only upload one image at a time.");
+      return;
     }
 
     try {
       // Upload the file and send with it the current request data
-      await uploadFile(file, requestData)
+      await uploadFile(file, requestData);
     } catch (error: unknown) {
       // Show error message if upload fails
       alert(
-        error instanceof Error ? error.message : 'An unknown error occurred'
-      )
+        error instanceof Error ? error.message : "An unknown error occurred",
+      );
     }
-  }
+  };
 
   // Get references to the upload files in message annotations format, see https://github.com/run-llama/chat-ui/blob/main/packages/chat-ui/src/hook/use-file.tsx#L56
-  const attachments = getAttachments()
+  const attachments = getAttachments();
 
   return (
     <ChatInput resetUploadedFiles={reset} attachments={attachments}>
@@ -51,11 +51,11 @@ export default function CustomChatInput() {
       {/* Document previews section */}
       {files.length > 0 && (
         <div className="flex w-full gap-4 overflow-auto py-2">
-          {files.map(file => (
+          {files.map((file) => (
             <DocumentInfo
               key={file.id}
               document={{ url: file.url, sources: [] }}
-              className="mb-2 mt-2"
+              className="mt-2 mb-2"
               onRemove={() => removeDoc(file)}
             />
           ))}
@@ -71,5 +71,5 @@ export default function CustomChatInput() {
         />
       </ChatInput.Form>
     </ChatInput>
-  )
+  );
 }

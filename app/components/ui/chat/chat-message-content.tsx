@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import { ChatMessage } from '@llamaindex/chat-ui'
+import { ChatMessage } from "@llamaindex/chat-ui";
 
 export function ChatMessageContent() {
   return (
@@ -12,5 +12,5 @@ export function ChatMessageContent() {
       <ChatMessage.Part.Source />
       <ChatMessage.Part.Suggestion />
     </ChatMessage.Content>
-  )
+  );
 }
