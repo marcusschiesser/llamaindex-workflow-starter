@@ -1,9 +1,8 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { ChatSection as ChatUI, useChatWorkflow } from "@llamaindex/chat-ui";
+import { ChatSection as ChatUI } from "@llamaindex/chat-ui";
 import { DefaultChatTransport } from "ai";
-import { getConfig } from "../lib/utils";
 import { ResizablePanel, ResizablePanelGroup } from "../resizable";
 import { ChatCanvasPanel } from "./canvas/panel";
 import CustomChatInput from "./chat-input";
@@ -11,10 +10,6 @@ import CustomChatMessages from "./chat-messages";
 import { ChatLayout } from "./layout";
 
 export default function ChatSection() {
-  const deployment = getConfig("DEPLOYMENT") || "";
-  const workflow = getConfig("WORKFLOW") || "";
-  const shouldUseChatWorkflow = deployment && workflow;
-
   const handleError = (error: unknown) => {
     if (!(error instanceof Error)) throw error;
     let errorMessage: string;
@@ -26,24 +21,13 @@ export default function ChatSection() {
     alert(errorMessage);
   };
 
-  const useChatHandler = useChat({
+  const handler = useChat({
     transport: new DefaultChatTransport({
-      api: getConfig("CHAT_API") || "/api/chat",
+      api: "/api/chat",
     }),
     onError: handleError,
     experimental_throttle: 100,
   });
-
-  const useChatWorkflowHandler = useChatWorkflow({
-    fileServerUrl: getConfig("FILE_SERVER_URL"),
-    deployment,
-    workflow,
-    onError: handleError,
-  });
-
-  const handler = shouldUseChatWorkflow
-    ? useChatWorkflowHandler
-    : useChatHandler;
 
   return (
     <>

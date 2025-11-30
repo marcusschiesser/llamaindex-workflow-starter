@@ -2,11 +2,10 @@
 
 import { ChatInput, useChatUI, useFile } from "@llamaindex/chat-ui";
 import { DocumentInfo, ImagePreview } from "@llamaindex/chat-ui/widgets";
-import { getConfig } from "../lib/utils";
 
 export default function CustomChatInput() {
   const { requestData, isLoading, input } = useChatUI();
-  const uploadAPI = getConfig("UPLOAD_API") ?? "";
+  const uploadAPI = "/api/upload";
   const {
     image,
     setImage,
