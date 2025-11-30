@@ -6,7 +6,6 @@ import { DefaultChatTransport } from "ai";
 import { getConfig } from "../lib/utils";
 import { ResizablePanel, ResizablePanelGroup } from "../resizable";
 import { ChatCanvasPanel } from "./canvas/panel";
-import { ChatInjection } from "./chat-injection";
 import CustomChatInput from "./chat-input";
 import CustomChatMessages from "./chat-messages";
 import { ChatLayout } from "./layout";
@@ -59,7 +58,6 @@ export default function ChatSection() {
           </ResizablePanelGroup>
         </ChatUI>
       </ChatLayout>
-      <ChatInjection />
     </>
   );
 }
