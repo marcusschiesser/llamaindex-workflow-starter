@@ -4,7 +4,6 @@ import { Inter } from "next/font/google";
 import "@llamaindex/chat-ui/styles/editor.css";
 import "@llamaindex/chat-ui/styles/markdown.css";
 import "@llamaindex/chat-ui/styles/pdf.css";
-import { SCRIPT_PATH } from "./constants";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -22,7 +21,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>{children}</body>
-      <script async src={SCRIPT_PATH}></script>
     </html>
   );
 }
