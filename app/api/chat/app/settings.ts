@@ -9,7 +9,7 @@ export function initSettings() {
       : undefined,
   });
   Settings.embedModel = new OpenAIEmbedding({
-    model: process.env.EMBEDDING_MODEL,
+    model: process.env.EMBEDDING_MODEL ?? "text-embedding-3-small",
     dimensions: process.env.EMBEDDING_DIM
       ? parseInt(process.env.EMBEDDING_DIM)
       : undefined,
