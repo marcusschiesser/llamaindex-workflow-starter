@@ -1,10 +1,10 @@
-import { randomUUID } from "@llamaindex/env";
-import { workflowEvent, type WorkflowEventData } from "@llamaindex/workflow";
+import { type WorkflowEventData, workflowEvent } from "@llamaindex/workflow";
 import type {
   ChatResponseChunk,
   MessageContent,
   MessageContentTextDetail,
 } from "llamaindex";
+import { randomUUID } from "node:crypto";
 
 export const TEXT_START_PART_TYPE = "text-start";
 export const TEXT_DELTA_PART_TYPE = "text-delta";

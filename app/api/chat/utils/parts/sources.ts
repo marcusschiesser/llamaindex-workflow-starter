@@ -74,6 +74,9 @@ export function toSourceEventNode(
     url: `/api/files/${filePath}`,
     metadata: node.node.metadata,
     score: node.score ?? null,
-    text: node.node.getContent(MetadataMode.NONE),
+    text:
+      "text" in node.node && typeof node.node.text === "string"
+        ? node.node.text
+        : node.node.getContent(MetadataMode.NONE),
   };
 }

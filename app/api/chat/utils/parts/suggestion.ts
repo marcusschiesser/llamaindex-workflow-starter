@@ -1,4 +1,3 @@
-import { getEnv } from "@llamaindex/env";
 import { workflowEvent } from "@llamaindex/workflow";
 import { type ChatMessage, Settings } from "llamaindex";
 import { getMessageTextContent } from "./text";
@@ -36,7 +35,8 @@ export async function generateNextQuestions(conversation: ChatMessage[]) {
       (message) => `${message.role}: ${getMessageTextContent(message.content)}`,
     )
     .join("\n");
-  const promptTemplate = getEnv("NEXT_QUESTION_PROMPT") || NEXT_QUESTION_PROMPT;
+  const promptTemplate =
+    process.env.NEXT_QUESTION_PROMPT || NEXT_QUESTION_PROMPT;
   const message = promptTemplate.replace("{conversation}", conversationText);
 
   try {
