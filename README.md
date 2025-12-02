@@ -184,6 +184,3 @@ Settings.llm = new Anthropic({
 - [LlamaIndex Workflows Documentation](https://developers.llamaindex.ai/typescript/workflows/)
 - [LlamaIndex Chat UI](https://ui.llamaindex.ai/)
 - [Vercel AI SDK Stream Protocol](https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol)
-
-
-
