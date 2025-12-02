@@ -40,7 +40,7 @@ NEXT_PUBLIC_STARTER_QUESTIONS='["What is this document about?", "Summarize the k
 ### Development
 
 ```bash
-pnpm dev
+npm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
