@@ -4,11 +4,14 @@ import { Settings, type ChatMessage, type ToolCall } from "llamaindex";
 import { randomUUID } from "node:crypto";
 import {
   runEvent,
+  SUGGESTION_PART_TYPE,
+  suggestionEvent,
   textDeltaEvent,
   textEndEvent,
   textStartEvent,
 } from "../utils/parts";
 import { toSourceEvent } from "../utils/parts/sources";
+import { generateNextQuestions } from "../utils/parts/suggestion";
 import { getToolCallFromResponseChunk } from "../utils/workflow";
 import { getIndex } from "./data";
 
@@ -91,12 +94,26 @@ export const workflowFactory = async () => {
         }
       }
 
+      const message: ChatMessage = {
+        role: "assistant" as const,
+        content: response,
+      };
+      messages.push(message);
+
       // Handle tool calls
       if (toolCalls.size > 0) {
         const toolCall = toolCalls.values().next().value;
         if (!toolCall) {
           continue;
         }
+
+        message.options = {
+          toolCall: Array.from(toolCalls.values()).map((toolCall) => ({
+            name: toolCall.name,
+            input: toolCall.input,
+            id: toolCall.id,
+          })),
+        };
 
         // Emit runEvent (pending)
         context.sendEvent(
@@ -153,12 +170,6 @@ export const workflowFactory = async () => {
             context.sendEvent(toSourceEvent(sourceNodes));
           }
 
-          // Add assistant message
-          messages.push({
-            role: "assistant",
-            content: response,
-          });
-
           context.sendEvent(
             textEndEvent.with({
               id: textPartId,
@@ -173,7 +184,14 @@ export const workflowFactory = async () => {
               : JSON.stringify(toolOutput);
           messages.push({
             role: "user",
-            content: `Tool result: ${toolResultText}`,
+            content: toolResultText,
+            options: {
+              toolResult: {
+                id: toolCall.id,
+                result: toolResultText,
+                isError: false,
+              },
+            },
           } as ChatMessage);
 
           // Continue loop to get final response
@@ -194,6 +212,18 @@ export const workflowFactory = async () => {
           context.sendEvent(stopEvent.with(undefined));
           return;
         }
+      }
+
+      // Generate next question suggestions if enabled
+      const enableSuggestion = process.env.SUGGEST_NEXT_QUESTIONS === "true";
+      if (enableSuggestion) {
+        const nextQuestions = await generateNextQuestions(messages);
+        context.sendEvent(
+          suggestionEvent.with({
+            type: SUGGESTION_PART_TYPE,
+            data: nextQuestions,
+          }),
+        );
       }
 
       // Done - emit stopEvent

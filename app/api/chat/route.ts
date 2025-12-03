@@ -10,7 +10,6 @@ initSettings();
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const enableSuggestion = process.env.SUGGEST_NEXT_QUESTIONS === "true";
     const { messages } = body as {
       messages: UIMessage[];
     };
@@ -51,9 +50,7 @@ export async function POST(req: NextRequest) {
     );
 
     // transform workflow stream to SSE format
-    const stream = workflowStream
-      .pipeThrough(ServerAdapter.postActions({ chatHistory, enableSuggestion })) // actions on stream finished
-      .pipeThrough(ServerAdapter.transformToSSE()); // transform all events to SSE format
+    const stream = workflowStream.pipeThrough(ServerAdapter.transformToSSE());
 
     return new Response(stream, {
       status: 200,

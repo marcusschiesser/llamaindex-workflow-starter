@@ -1,74 +1,15 @@
 import { type WorkflowEventData } from "@llamaindex/workflow-core";
-import type { ChatMessage, MessageContentTextDetail } from "llamaindex";
 import {
-  SUGGESTION_PART_TYPE,
-  suggestionEvent,
   TEXT_DELTA_PART_TYPE,
   TEXT_END_PART_TYPE,
   TEXT_START_PART_TYPE,
-  textDeltaEvent,
 } from "./parts";
-import { generateNextQuestions } from "./parts/suggestion";
 
 /**
  * Responsible for handling specific LlamaIndexServer events in the workflow stream
  */
 export class ServerAdapter {
   static readonly encoder = new TextEncoder();
-
-  /**
-   * Accumulate text parts from stream and do post processing such as suggest next questions
-   */
-  static postActions(options?: {
-    chatHistory?: ChatMessage[];
-    enableSuggestion?: boolean;
-  }) {
-    const { enableSuggestion, chatHistory } = options ?? {};
-
-    // get the text parts from stream
-    const accumulatedTextParts: Record<string, MessageContentTextDetail> = {};
-
-    return new TransformStream({
-      async transform(event, controller) {
-        if (textDeltaEvent.include(event)) {
-          const textPart = accumulatedTextParts[event.data.id];
-          if (textPart) {
-            // if text part already exists, append the delta to the text
-            textPart.text += event.data.delta;
-          } else {
-            // if text part does not exist, add a new text part
-            accumulatedTextParts[event.data.id] = {
-              type: "text",
-              text: event.data.delta,
-            };
-          }
-        }
-        controller.enqueue(event);
-      },
-      async flush(controller) {
-        if (Object.keys(accumulatedTextParts).length === 0) return;
-
-        const newMessage: ChatMessage = {
-          role: "assistant",
-          content: Object.values(accumulatedTextParts),
-        };
-        const conversation: ChatMessage[] = [
-          ...(chatHistory ?? []),
-          newMessage,
-        ];
-
-        if (enableSuggestion) {
-          const nextQuestions = await generateNextQuestions(conversation);
-          controller.enqueue(
-            suggestionEvent.with({
-              type: SUGGESTION_PART_TYPE,
-              data: nextQuestions,
-            }),
-          );
-        }
-      },
-    });
-  }
 
   /**
    * Transform LlamaIndexServer events to Server-Sent Events (SSE)
