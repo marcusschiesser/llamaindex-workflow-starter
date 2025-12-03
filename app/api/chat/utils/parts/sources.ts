@@ -1,4 +1,4 @@
-import { workflowEvent } from "@llamaindex/workflow";
+import { workflowEvent } from "@llamaindex/workflow-core";
 import {
   MetadataMode,
   type JSONValue,
@@ -44,12 +44,9 @@ export function getSourceNodesFromToolOutput(
   return [];
 }
 
-export function toSourceEvent(
-  sourceNodes: NodeWithScore<Metadata>[] = [],
-  llamaCloudOutputDir: string = "output/llamacloud",
-) {
+export function toSourceEvent(sourceNodes: NodeWithScore<Metadata>[] = []) {
   const nodes: SourceEventNode[] = sourceNodes.map((node) =>
-    toSourceEventNode(node, llamaCloudOutputDir),
+    toSourceEventNode(node),
   );
   return sourceEvent.with({
     type: SOURCE_EVENT_TYPE,
@@ -57,15 +54,10 @@ export function toSourceEvent(
   });
 }
 
-export function toSourceEventNode(
-  node: NodeWithScore<Metadata>,
-  llamaCloudOutputDir: string = "output/llamacloud",
-) {
-  const { file_name, pipeline_id } = node.node.metadata;
+export function toSourceEventNode(node: NodeWithScore<Metadata>) {
+  const { file_name } = node.node.metadata;
 
-  const filePath = pipeline_id
-    ? `${llamaCloudOutputDir}/${pipeline_id}$${file_name}`
-    : `data/${file_name}`;
+  const filePath = `data/${file_name}`;
 
   return {
     id: node.node.id_,

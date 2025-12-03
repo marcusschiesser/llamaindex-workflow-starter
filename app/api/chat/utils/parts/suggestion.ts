@@ -1,4 +1,4 @@
-import { workflowEvent } from "@llamaindex/workflow";
+import { workflowEvent } from "@llamaindex/workflow-core";
 import { type ChatMessage, Settings } from "llamaindex";
 import { getMessageTextContent } from "./text";
 

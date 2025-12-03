@@ -1,4 +1,4 @@
-import { workflowEvent } from "@llamaindex/workflow";
+import { workflowEvent } from "@llamaindex/workflow-core";
 
 export const EVENT_PART_TYPE = `data-event` as const;
 

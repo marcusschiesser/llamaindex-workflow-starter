@@ -37,10 +37,20 @@ SUGGEST_NEXT_QUESTIONS=true
 NEXT_PUBLIC_STARTER_QUESTIONS='["What is this document about?", "Summarize the key points"]'
 ```
 
+### Generating Embeddings
+
+Before running the development server, you need to generate embeddings for the PDF documents in the `data` directory:
+
+```bash
+npm run generate
+```
+
+This command processes all documents in the `data` folder, creates embeddings, and stores them in the `storage` directory. The embeddings are required for the RAG workflow to function properly.
+
 ### Development
 
 ```bash
-npm dev
+npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
@@ -49,26 +59,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Workflow Definition
 
-The LlamaIndex workflow is defined in [`app/api/chat/app/workflow.ts`](app/api/chat/app/workflow.ts):
-
-```typescript
-import { agent } from "@llamaindex/workflow";
-import { getIndex } from "./data";
-
-export const workflowFactory = async (reqBody: any) => {
-  const index = await getIndex(reqBody?.data);
-
-  const queryEngineTool = index.queryTool({
-    metadata: {
-      name: "query_document",
-      description: `This tool can retrieve information about letter standards`,
-    },
-    includeSourceNodes: true,
-  });
-
-  return agent({ tools: [queryEngineTool] });
-};
-```
+The LlamaIndex workflow is defined in [`app/api/chat/app/workflow.ts`](app/api/chat/app/workflow.ts).
 
 This creates a simple agent with a document query tool. Customize this file to:
 
@@ -81,12 +72,7 @@ This creates a simple agent with a document query tool. Customize this file to:
 The API route [`app/api/chat/route.ts`](app/api/chat/route.ts) handles the conversion of workflow events to the data part format used by Vercel AI SDK:
 
 ```typescript
-const stream = workflowStream
-  .pipeThrough(AgentWorkflowAdapter.processStreamEvents())
-  .pipeThrough(AgentWorkflowAdapter.processToolCallEvents())
-  .pipeThrough(AgentWorkflowAdapter.processToolCallResultEvents(parsers))
-  .pipeThrough(ServerAdapter.postActions({ chatHistory, enableSuggestion }))
-  .pipeThrough(ServerAdapter.transformToSSE());
+const stream = workflowStream.pipeThrough(ServerAdapter.transformToSSE());
 ```
 
 The adapters transform LlamaIndex workflow events into streamable data parts that the frontend can render.

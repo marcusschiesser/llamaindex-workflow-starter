@@ -38,7 +38,7 @@
     "@llamaindex/chat-ui": "latest",
     "@llamaindex/openai": "~0.4.0",
     "@llamaindex/readers": "~3.1.4",
-    "@llamaindex/workflow": "~1.1.8",
+    "@llamaindex/workflow-core": "~1.3.3",
     "ai": "^5.0.4",
     "clsx": "^2.1.1",
     "dotenv": "^16.5.0",

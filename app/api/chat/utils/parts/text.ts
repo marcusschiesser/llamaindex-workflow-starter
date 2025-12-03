@@ -1,4 +1,7 @@
-import { type WorkflowEventData, workflowEvent } from "@llamaindex/workflow";
+import {
+  type WorkflowEventData,
+  workflowEvent,
+} from "@llamaindex/workflow-core";
 import type {
   ChatResponseChunk,
   MessageContent,

@@ -1,10 +1,10 @@
 import {
-  SimpleDocumentStore,
+  type SimpleDocumentStore,
   storageContextFromDefaults,
   VectorStoreIndex,
 } from "llamaindex";
 
-export async function getIndex(params?: any) {
+export async function getIndex() {
   const storageContext = await storageContextFromDefaults({
     persistDir: "storage",
   });
@@ -14,7 +14,7 @@ export async function getIndex(params?: any) {
   ).length;
   if (numberOfDocs === 0) {
     throw new Error(
-      "Index not found. Please run `pnpm run generate` to generate the embeddings of the documents",
+      "Index not found. Please run `npm run generate` to generate the embeddings of the documents",
     );
   }
 
