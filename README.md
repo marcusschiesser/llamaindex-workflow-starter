@@ -61,7 +61,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 The LlamaIndex workflow is defined in [`app/api/chat/app/workflow.ts`](app/api/chat/app/workflow.ts).
 
-This creates a simple agent with a document query tool. Customize this file to:
+This creates a agentic RAG workflow with a document query tool. Customize this file to:
 
 - Add more tools
 - Implement custom workflow logic
@@ -69,13 +69,14 @@ This creates a simple agent with a document query tool. Customize this file to:
 
 ### Event Streaming & Adapters
 
-The API route [`app/api/chat/route.ts`](app/api/chat/route.ts) handles the conversion of workflow events to the data part format used by Vercel AI SDK:
+The API route [`app/api/chat/route.ts`](app/api/chat/route.ts) handles the conversion of workflow events to the [data part format](https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol#data-parts) used by Vercel AI SDK:
 
 ```typescript
 const stream = workflowStream.pipeThrough(ServerAdapter.transformToSSE());
 ```
 
 The adapters transform LlamaIndex workflow events into streamable data parts that the frontend can render.
+For example, the `sourceEvent` from [`app/api/chat/utils/parts/sources.ts`](app/api/chat/utils/parts/sources.ts) is transformed to a [`data-sources` part](https://github.com/run-llama/chat-ui/blob/main/docs/chat-ui/parts.mdx#source-parts-data-sources).
 
 ### Chat UI Components
 
@@ -98,6 +99,8 @@ export function ChatMessageContent() {
 }
 ```
 
+E.g. the `data-sources` part from the last section is rendered by the `ChatMessage.Part.Source` component.
+
 Each part component renders a specific type of content:
 
 - **Event** – Shows workflow progress and tool execution status
@@ -107,7 +110,7 @@ Each part component renders a specific type of content:
 - **Source** – Retrieved document sources with citations
 - **Suggestion** – Follow-up question suggestions
 
-Learn more about message parts in the [Chat UI documentation](https://github.com/run-llama/chat-ui/blob/main/docs/chat-ui/parts.mdx).
+Learn more about message parts and how to render custom parts in the [Chat UI documentation](https://github.com/run-llama/chat-ui/blob/main/docs/chat-ui/parts.mdx).
 
 ### Model Configuration
 
@@ -128,32 +131,6 @@ export function initSettings() {
   });
 }
 ```
-
-## Customization
-
-### Adding New Tools
-
-Extend the workflow by adding more tools to the agent:
-
-```typescript
-import { agent, tool } from "@llamaindex/workflow";
-
-const customTool = tool({
-  name: "my_tool",
-  description: "Description of what this tool does",
-  parameters: z.object({
-    query: z.string(),
-  }),
-  execute: async ({ query }) => {
-    // Your tool logic here
-    return result;
-  },
-});
-
-return agent({ tools: [queryEngineTool, customTool] });
-```
-
-### Using Different LLM Providers
 
 Swap out OpenAI for other providers by modifying `settings.ts`:
 
