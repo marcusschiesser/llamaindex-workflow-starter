@@ -2,8 +2,8 @@ import type { UIMessage } from "@ai-sdk/react";
 import type { ChatMessage } from "llamaindex";
 import { type NextRequest, NextResponse } from "next/server";
 import { initSettings } from "./app/settings";
-import { stopEvent, workflowFactory } from "./app/workflow";
-import { runWorkflow, ServerAdapter, ServerMessage } from "./utils";
+import { startEvent, stopEvent, workflowFactory } from "./app/workflow";
+import { ServerAdapter, ServerMessage } from "./utils";
 
 initSettings();
 
@@ -31,11 +31,15 @@ export async function POST(req: NextRequest) {
       (message) => new ServerMessage(message).llamaindexMessage,
     );
 
-    // run workflow
-    const context = await runWorkflow({
-      workflow: await workflowFactory(),
-      input: { userInput, chatHistory },
-    });
+    // create workflow and context
+    const context = await workflowFactory();
+    // send start event
+    context.sendEvent(
+      startEvent.with({
+        userInput,
+        chatHistory,
+      }),
+    );
 
     // abort controller
     const abortController = new AbortController();

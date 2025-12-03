@@ -1,17 +1,4 @@
-import type { Workflow, WorkflowContext } from "@llamaindex/workflow-core";
-import type {
-  ChatMessage,
-  ChatResponseChunk,
-  JSONObject,
-  MessageContent,
-  ToolCall,
-} from "llamaindex";
-import { startEvent } from "../app/workflow";
-
-export type WorkflowInput = {
-  userInput: MessageContent;
-  chatHistory: ChatMessage[];
-};
+import type { ChatResponseChunk, JSONObject, ToolCall } from "llamaindex";
 
 /**
  * Extract tool calls from a ChatResponseChunk
@@ -49,25 +36,4 @@ export function getToolCallFromResponseChunk(
   }
 
   return toolCalls;
-}
-
-/**
- * Run a workflow with user input and return a workflow context
- */
-export async function runWorkflow({
-  workflow,
-  input,
-}: {
-  workflow: Workflow;
-  input: WorkflowInput;
-}): Promise<WorkflowContext> {
-  const context = workflow.createContext();
-  context.sendEvent(
-    startEvent.with({
-      userInput: input.userInput,
-      chatHistory: input.chatHistory,
-    }),
-  );
-
-  return context;
 }
