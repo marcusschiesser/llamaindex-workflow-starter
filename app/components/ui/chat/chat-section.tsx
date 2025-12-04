@@ -48,7 +48,7 @@ export default function ChatSection() {
 
 function ChatSectionPanel() {
   return (
-    <ResizablePanel defaultSize={40} minSize={30} className="mx-auto max-w-1/2">
+    <ResizablePanel defaultSize={40} minSize={30} className="mx-auto">
       <div className="flex h-full min-w-0 flex-1 flex-col gap-4">
         <CustomChatMessages />
         <CustomChatInput />
