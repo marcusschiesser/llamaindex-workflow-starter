@@ -169,9 +169,7 @@ export const workflowFactory = async () => {
         }),
       );
 
-      // Generate next question suggestions if enabled
-      const enableSuggestion = process.env.SUGGEST_NEXT_QUESTIONS === "true";
-      if (enableSuggestion) {
+      // Generate next question suggestions 
         const nextQuestions = await generateNextQuestions(state.messages);
         sendEvent(
           suggestionEvent.with({
@@ -179,7 +177,6 @@ export const workflowFactory = async () => {
             data: nextQuestions,
           }),
         );
-      }
 
       // No tools requested, send stop event
       sendEvent(stopEvent.with(undefined));

@@ -29,12 +29,6 @@ Create a `.env` file in the root directory:
 
 ```env
 OPENAI_API_KEY=your-openai-api-key
-
-# Optional: Enable suggested follow-up questions
-SUGGEST_NEXT_QUESTIONS=true
-
-# Optional: Starter questions shown when chat is empty (JSON array)
-NEXT_PUBLIC_STARTER_QUESTIONS='["What is this document about?", "Summarize the key points"]'
 ```
 
 ### Generating Embeddings
