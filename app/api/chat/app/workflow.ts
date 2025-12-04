@@ -169,14 +169,14 @@ export const workflowFactory = async () => {
         }),
       );
 
-      // Generate next question suggestions 
-        const nextQuestions = await generateNextQuestions(state.messages);
-        sendEvent(
-          suggestionEvent.with({
-            type: SUGGESTION_PART_TYPE,
-            data: nextQuestions,
-          }),
-        );
+      // Generate next question suggestions
+      const nextQuestions = await generateNextQuestions(state.messages);
+      sendEvent(
+        suggestionEvent.with({
+          type: SUGGESTION_PART_TYPE,
+          data: nextQuestions,
+        }),
+      );
 
       // No tools requested, send stop event
       sendEvent(stopEvent.with(undefined));
