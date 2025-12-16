@@ -1,6 +1,7 @@
+import { openai } from "@ai-sdk/openai";
 import { workflowEvent } from "@llamaindex/workflow-core";
-import { type ChatMessage, Settings } from "llamaindex";
-import { getMessageTextContent } from "./text";
+import { generateText, type ModelMessage } from "ai";
+import { getModelMessageTextContent } from "./text";
 
 export const SUGGESTION_PART_TYPE = `data-suggested_questions` as const;
 
@@ -29,19 +30,23 @@ Your answer should be wrapped in three sticks which follows the following format
 \`\`\`
 `;
 
-export async function generateNextQuestions(conversation: ChatMessage[]) {
+export async function generateNextQuestions(conversation: ModelMessage[]) {
   const conversationText = conversation
     .map(
-      (message) => `${message.role}: ${getMessageTextContent(message.content)}`,
+      (message) =>
+        `${message.role}: ${getModelMessageTextContent(message.content)}`,
     )
     .join("\n");
   const promptTemplate =
     process.env.NEXT_QUESTION_PROMPT || NEXT_QUESTION_PROMPT;
-  const message = promptTemplate.replace("{conversation}", conversationText);
+  const prompt = promptTemplate.replace("{conversation}", conversationText);
 
   try {
-    const response = await Settings.llm.complete({ prompt: message });
-    const questions = extractQuestions(response.text);
+    const { text } = await generateText({
+      model: openai(process.env.MODEL ?? "gpt-4o-mini"),
+      prompt,
+    });
+    const questions = extractQuestions(text);
     return questions;
   } catch (error) {
     console.error("Error when generating the next questions: ", error);

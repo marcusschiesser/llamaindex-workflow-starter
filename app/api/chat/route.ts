@@ -1,9 +1,9 @@
 import type { UIMessage } from "@ai-sdk/react";
-import type { ChatMessage } from "llamaindex";
+import { convertToModelMessages, type ModelMessage } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { initSettings } from "./app/settings";
 import { startEvent, stopEvent, workflowFactory } from "./app/workflow";
-import { ServerAdapter, ServerMessage } from "./utils";
+import { ServerAdapter } from "./utils";
 
 initSettings();
 
@@ -24,12 +24,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const serverMessage = new ServerMessage(lastMessage);
-
-    const userInput = serverMessage.llamaindexMessage.content;
-    const chatHistory: ChatMessage[] = messages.map(
-      (message) => new ServerMessage(message).llamaindexMessage,
-    );
+    const userInput = lastMessage.parts.find(
+      (part) => part.type === "text" && "text" in part,
+    )?.text as string;
+    const chatHistory: ModelMessage[] = convertToModelMessages(messages);
 
     // create workflow and context
     const context = await workflowFactory();

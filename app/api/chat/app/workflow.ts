@@ -1,9 +1,13 @@
+import { openai } from "@ai-sdk/openai";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
-import type { JSONValue, MessageContent, Metadata, NodeWithScore } from "llamaindex";
-import { Settings, tool, type ChatMessage, type ToolCall } from "llamaindex";
+import type { Metadata, NodeWithScore } from "@vectorstores/core";
+import { formatLLM } from "@vectorstores/core";
+import { streamText, tool, type ModelMessage, type ToolCallPart } from "ai";
 import { randomUUID } from "node:crypto";
+import { z } from "zod";
 import {
+  generateNextQuestions,
   runEvent,
   SUGGESTION_PART_TYPE,
   suggestionEvent,
@@ -12,16 +16,12 @@ import {
   textStartEvent,
 } from "../utils/parts";
 import { toSourceEvent } from "../utils/parts/sources";
-import { generateNextQuestions } from "../utils/parts/suggestion";
-import { getToolCallFromResponseChunk } from "../utils/workflow";
 import { getIndex } from "./data";
-import { formatLLM } from "@vectorstores/core";
-import { z } from "zod";
 
 // Define workflow state
 type AgentWorkflowState = {
   expectedToolCount: number;
-  messages: ChatMessage[];
+  messages: ModelMessage[];
   toolResponses: Array<{
     toolCallId: string;
     result: string;
@@ -32,8 +32,8 @@ type AgentWorkflowState = {
 
 // Define workflow events
 export type StartEventData = {
-  userInput: MessageContent;
-  chatHistory: ChatMessage[];
+  userInput: string;
+  chatHistory: ModelMessage[];
 };
 
 export const startEvent = workflowEvent<StartEventData>();
@@ -41,7 +41,7 @@ export const stopEvent = workflowEvent<void>();
 
 // Internal events for tool call flow
 const toolCallEvent = workflowEvent<{
-  toolCall: ToolCall;
+  toolCall: ToolCallPart;
 }>();
 
 const toolResponseEvent = workflowEvent<{
@@ -56,15 +56,28 @@ export const workflowFactory = async () => {
   const index = await getIndex();
   const retriever = index.asRetriever();
 
-  const queryEngineTool = tool({
-    name: "query_document",
+  // Define tool parameters type
+  type QueryDocumentParams = { query: string };
+  type QueryDocumentResult = {
+    sourceNodes: NodeWithScore<Metadata>[];
+    response: string;
+  };
+
+  // Execute function for the query document tool
+  async function executeQueryDocument(
+    params: QueryDocumentParams,
+  ): Promise<QueryDocumentResult> {
+    const nodes = await retriever.retrieve({ query: params.query });
+    return { sourceNodes: nodes, response: formatLLM(nodes) };
+  }
+
+  // Define tool for querying documents
+  const queryDocumentTool = tool({
     description: `This tool can retrieve information about letter standards`,
-    execute: async (input: { query: string }) => {
-      const nodes = await retriever.retrieve( input );
-      return { sourceNodes: nodes, response: formatLLM(nodes) } as unknown as JSONValue;
-    },
-    parameters: z.object({
-      query: z.string().describe("The query to retrieve information about letter standards"),
+    inputSchema: z.object({
+      query: z
+        .string()
+        .describe("The query to retrieve information about letter standards"),
     }),
   });
 
@@ -98,15 +111,15 @@ export const workflowFactory = async () => {
     const { sendEvent, state } = context;
     const { messages, textPartId } = state;
 
-    // Call LLM with tools - use streaming
-    const stream = await Settings.llm.chat({
+    // Call LLM with tools - use streaming via Vercel AI SDK
+    const result = streamText({
+      model: openai(process.env.MODEL ?? "gpt-4o-mini"),
       messages,
-      tools: [queryEngineTool],
-      stream: true,
+      tools: { query_document: queryDocumentTool },
     });
 
     let response = "";
-    const toolCalls: Map<string, ToolCall> = new Map();
+    const toolCalls: Map<string, ToolCallPart> = new Map();
 
     sendEvent(
       textStartEvent.with({
@@ -115,45 +128,33 @@ export const workflowFactory = async () => {
       }),
     );
 
-    // Process stream - collect chunks and check for tool calls
-    for await (const chunk of stream) {
-      response += chunk.delta;
-
-      sendEvent(
-        textDeltaEvent.with({
-          id: textPartId,
-          type: "text-delta",
-          delta: chunk.delta,
-        }),
-      );
-
-      // Extract tool calls from chunk
-      const toolCallsInChunk = getToolCallFromResponseChunk(chunk);
-      if (toolCallsInChunk.length > 0) {
-        // Just upsert the tool calls with the latest one if they exist
-        toolCallsInChunk.forEach((toolCall) => {
-          toolCalls.set(toolCall.id, toolCall);
-        });
+    // Process stream using Vercel AI's fullStream
+    for await (const chunk of result.fullStream) {
+      if (chunk.type === "text-delta") {
+        response += chunk.text;
+        sendEvent(
+          textDeltaEvent.with({
+            id: textPartId,
+            type: "text-delta",
+            delta: chunk.text,
+          }),
+        );
+      } else if (chunk.type === "tool-call") {
+        toolCalls.set(chunk.toolCallId, chunk);
       }
     }
 
-    // Add assistant message to state
-    const message: ChatMessage = {
-      role: "assistant" as const,
-      content: response,
-    };
-
     // Handle tool calls
     if (toolCalls.size > 0) {
-      message.options = {
-        toolCall: Array.from(toolCalls.values()).map((toolCall) => ({
-          name: toolCall.name,
-          input: toolCall.input,
-          id: toolCall.id,
-        })),
-      };
+      // Add assistant message with tool calls to state
+      state.messages.push({
+        role: "assistant",
+        content: [
+          ...(response ? [{ type: "text" as const, text: response }] : []),
+          ...Array.from(toolCalls.values()),
+        ],
+      } satisfies ModelMessage);
 
-      state.messages.push(message);
       state.expectedToolCount = toolCalls.size;
       state.toolResponses = [];
 
@@ -166,7 +167,11 @@ export const workflowFactory = async () => {
         );
       }
     } else {
-      state.messages.push(message);
+      // Add assistant message to state
+      state.messages.push({
+        role: "assistant" as const,
+        content: response,
+      });
 
       // Send text end event
       sendEvent(
@@ -198,40 +203,35 @@ export const workflowFactory = async () => {
     // Emit runEvent (pending)
     sendEvent(
       runEvent.with({
-        id: toolCall.id,
+        id: toolCall.toolCallId,
         type: "data-event",
         data: {
-          title: `Agent Tool Call: ${toolCall.name}`,
-          description: `Using tool: '${toolCall.name}' with inputs: '${JSON.stringify(toolCall.input)}'`,
+          title: `Agent Tool Call: ${toolCall.toolName}`,
+          description: `Using tool: '${toolCall.toolName}' with inputs: '${JSON.stringify(toolCall.input)}'`,
           status: "pending",
         },
       }),
     );
 
     try {
-      let toolOutput: any;
+      let toolOutput: QueryDocumentResult | undefined;
 
-      if (toolCall.name === "query_document") {
-        // Extract query from toolCall.input (which is JSONObject)
-        const query =
-          (toolCall.input as any).query ||
-          (toolCall.input as any).rawInput ||
-          JSON.stringify(toolCall.input);
-        toolOutput = await queryEngineTool.call({
-          query: typeof query === "string" ? query : JSON.stringify(query),
-        });
+      if (toolCall.toolName === "query_document") {
+        // Extract query from toolCall.input and execute the tool
+        const input = toolCall.input as QueryDocumentParams;
+        toolOutput = await executeQueryDocument(input);
       } else {
-        throw new Error(`Unknown tool: ${toolCall.name}`);
+        throw new Error(`Unknown tool: ${toolCall.toolName}`);
       }
 
       // Emit runEvent (success)
       sendEvent(
         runEvent.with({
-          id: toolCall.id,
+          id: toolCall.toolCallId,
           type: "data-event",
           data: {
-            title: `Agent Tool Call: ${toolCall.name}`,
-            description: `Using tool: '${toolCall.name}' with inputs: '${JSON.stringify(toolCall.input)}'`,
+            title: `Agent Tool Call: ${toolCall.toolName}`,
+            description: `Using tool: '${toolCall.toolName}' with inputs: '${JSON.stringify(toolCall.input)}'`,
             status: "success",
             data: toolOutput,
           },
@@ -239,38 +239,27 @@ export const workflowFactory = async () => {
       );
 
       // Extract source nodes and emit sourceEvent
-      if (
-        toolOutput != null &&
-        typeof toolOutput === "object" &&
-        "sourceNodes" in toolOutput &&
-        Array.isArray(toolOutput.sourceNodes)
-      ) {
-        const sourceNodes =
-          toolOutput.sourceNodes as unknown as NodeWithScore<Metadata>[];
-        sendEvent(toSourceEvent(sourceNodes));
+      if (toolOutput) {
+        sendEvent(toSourceEvent(toolOutput.sourceNodes));
+        // Send tool response
+        const toolResultText = JSON.stringify(toolOutput);
+
+        sendEvent(
+          toolResponseEvent.with({
+            toolCallId: toolCall.toolCallId,
+            result: toolResultText,
+            isError: false,
+          }),
+        );
       }
-
-      // Send tool response
-      const toolResultText =
-        typeof toolOutput === "string"
-          ? toolOutput
-          : JSON.stringify(toolOutput);
-
-      sendEvent(
-        toolResponseEvent.with({
-          toolCallId: toolCall.id,
-          result: toolResultText,
-          isError: false,
-        }),
-      );
     } catch (error) {
       // Emit runEvent (error)
       sendEvent(
         runEvent.with({
-          id: toolCall.id,
+          id: toolCall.toolCallId,
           type: "data-event",
           data: {
-            title: `Agent Tool Call: ${toolCall.name}`,
+            title: `Agent Tool Call: ${toolCall.toolName}`,
             description: `Error: ${(error as Error).message}`,
             status: "error",
           },
@@ -280,7 +269,7 @@ export const workflowFactory = async () => {
       // Send error response
       sendEvent(
         toolResponseEvent.with({
-          toolCallId: toolCall.id,
+          toolCallId: toolCall.toolCallId,
           result: `Error: ${(error as Error).message}`,
           isError: true,
         }),
@@ -305,19 +294,22 @@ export const workflowFactory = async () => {
         return;
       }
 
-      // Add tool result messages for each response
+      // Add tool result messages using Vercel AI's format
       for (const toolResponse of state.toolResponses) {
         state.messages.push({
-          role: "user",
-          content: toolResponse.result,
-          options: {
-            toolResult: {
-              id: toolResponse.toolCallId,
-              result: toolResponse.result,
-              isError: false,
+          role: "tool",
+          content: [
+            {
+              type: "tool-result",
+              toolCallId: toolResponse.toolCallId,
+              toolName: "query_document",
+              output: {
+                type: "json",
+                value: JSON.parse(toolResponse.result),
+              },
             },
-          },
-        } as ChatMessage);
+          ],
+        });
       }
 
       // Continue the loop with the updated conversation

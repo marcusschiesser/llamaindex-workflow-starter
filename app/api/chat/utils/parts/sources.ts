@@ -4,7 +4,7 @@ import {
   type JSONValue,
   type Metadata,
   type NodeWithScore,
-} from "llamaindex";
+} from "@vectorstores/core";
 
 export const SOURCE_EVENT_TYPE = `data-sources` as const;
 
