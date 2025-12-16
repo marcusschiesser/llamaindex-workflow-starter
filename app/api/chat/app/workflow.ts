@@ -1,7 +1,7 @@
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
-import type { MessageContent, Metadata, NodeWithScore } from "llamaindex";
-import { Settings, type ChatMessage, type ToolCall } from "llamaindex";
+import type { JSONValue, MessageContent, Metadata, NodeWithScore } from "llamaindex";
+import { Settings, tool, type ChatMessage, type ToolCall } from "llamaindex";
 import { randomUUID } from "node:crypto";
 import {
   runEvent,
@@ -15,6 +15,8 @@ import { toSourceEvent } from "../utils/parts/sources";
 import { generateNextQuestions } from "../utils/parts/suggestion";
 import { getToolCallFromResponseChunk } from "../utils/workflow";
 import { getIndex } from "./data";
+import { formatLLM } from "@vectorstores/core";
+import { z } from "zod";
 
 // Define workflow state
 type AgentWorkflowState = {
@@ -52,13 +54,18 @@ const continueEvent = workflowEvent<void>();
 
 export const workflowFactory = async () => {
   const index = await getIndex();
+  const retriever = index.asRetriever();
 
-  const queryEngineTool = index.queryTool({
-    metadata: {
-      name: "query_document",
-      description: `This tool can retrieve information about letter standards`,
+  const queryEngineTool = tool({
+    name: "query_document",
+    description: `This tool can retrieve information about letter standards`,
+    execute: async (input: { query: string }) => {
+      const nodes = await retriever.retrieve( input );
+      return { sourceNodes: nodes, response: formatLLM(nodes) } as unknown as JSONValue;
     },
-    includeSourceNodes: true,
+    parameters: z.object({
+      query: z.string().describe("The query to retrieve information about letter standards"),
+    }),
   });
 
   // Create stateful middleware

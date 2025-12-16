@@ -2,7 +2,7 @@ import {
   type SimpleDocumentStore,
   storageContextFromDefaults,
   VectorStoreIndex,
-} from "llamaindex";
+} from "@vectorstores/core";
 
 export async function getIndex() {
   const storageContext = await storageContextFromDefaults({
