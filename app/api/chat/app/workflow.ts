@@ -1,4 +1,3 @@
-import { openai } from "@ai-sdk/openai";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 import type { Metadata, NodeWithScore } from "@vectorstores/core";
@@ -17,6 +16,7 @@ import {
 } from "../utils/parts";
 import { toSourceEvent } from "../utils/parts/sources";
 import { getIndex } from "./data";
+import { llm } from "./settings";
 
 // Define workflow state
 type AgentWorkflowState = {
@@ -113,7 +113,7 @@ export const workflowFactory = async () => {
 
     // Call LLM with tools - use streaming via Vercel AI SDK
     const result = streamText({
-      model: openai(process.env.MODEL ?? "gpt-4o-mini"),
+      model: llm,
       messages,
       tools: { query_document: queryDocumentTool },
     });

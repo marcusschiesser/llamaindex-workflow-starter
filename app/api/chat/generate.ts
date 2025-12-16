@@ -3,7 +3,6 @@ import {
   VectorStoreIndex,
 } from "@vectorstores/core";
 import { SimpleDirectoryReader } from "@vectorstores/readers/directory";
-import "dotenv/config";
 import { initSettings } from "./app/settings";
 
 async function generateDatasource() {

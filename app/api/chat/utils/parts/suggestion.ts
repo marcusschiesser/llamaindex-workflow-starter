@@ -1,6 +1,6 @@
-import { openai } from "@ai-sdk/openai";
 import { workflowEvent } from "@llamaindex/workflow-core";
 import { generateText, type ModelMessage } from "ai";
+import { llm } from "../../app/settings";
 import { getModelMessageTextContent } from "./text";
 
 export const SUGGESTION_PART_TYPE = `data-suggested_questions` as const;
@@ -43,7 +43,7 @@ export async function generateNextQuestions(conversation: ModelMessage[]) {
 
   try {
     const { text } = await generateText({
-      model: openai(process.env.MODEL ?? "gpt-4o-mini"),
+      model: llm,
       prompt,
     });
     const questions = extractQuestions(text);
