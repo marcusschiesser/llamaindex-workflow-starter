@@ -1,13 +1,13 @@
+import { openai } from "@ai-sdk/openai";
 import { Settings } from "@vectorstores/core";
-import { OpenAI } from "openai";
+import { embedMany } from "ai";
 
 export function initSettings() {
-  const openai = new OpenAI();
   Settings.embedFunc = async (input: string[]): Promise<number[][]> => {
-    const { data } = await openai.embeddings.create({
-      model: "text-embedding-3-small",
-      input,
+    const { embeddings } = await embedMany({
+      model: openai.embedding("text-embedding-3-small"),
+      values: input,
     });
-    return data.map((d) => d.embedding);
+    return embeddings;
   };
 }
