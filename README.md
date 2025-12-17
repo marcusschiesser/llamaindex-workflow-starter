@@ -139,5 +139,6 @@ export const llm = anthropic("claude-sonnet-4-20250514");
 ## Learn More
 
 - [LlamaIndex Workflows Documentation](https://developers.llamaindex.ai/typescript/workflows/)
+- [vectorstores.org](https://vectorstores.org/)
 - [LlamaIndex Chat UI](https://ui.llamaindex.ai/)
 - [Vercel AI SDK Stream Protocol](https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol)
