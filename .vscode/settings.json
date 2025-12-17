@@ -1,4 +1,5 @@
 {
   "prettier.configPath": "./prettier.config.mjs",
-  "prettier.prettierPath": "./node_modules/prettier"
+  "prettier.prettierPath": "./node_modules/prettier",
+  "prettier.ignorePath": ""
 }

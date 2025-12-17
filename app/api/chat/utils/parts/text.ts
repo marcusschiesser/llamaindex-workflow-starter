@@ -1,13 +1,5 @@
-import {
-  type WorkflowEventData,
-  workflowEvent,
-} from "@llamaindex/workflow-core";
-import type {
-  ChatResponseChunk,
-  MessageContent,
-  MessageContentTextDetail,
-} from "llamaindex";
-import { randomUUID } from "node:crypto";
+import { workflowEvent } from "@llamaindex/workflow-core";
+import type { ModelMessage, TextPart } from "ai";
 
 export const TEXT_START_PART_TYPE = "text-start";
 export const TEXT_DELTA_PART_TYPE = "text-delta";
@@ -34,56 +26,19 @@ export const textDeltaEvent = workflowEvent<TextDeltaPart>(); // equal to agentS
 export const textEndEvent = workflowEvent<TextEndPart>(); // this event must be triggered after streaming text
 
 /**
- * Send text events to stream, finish when generator is done
- * @param generator - AsyncIterable<ChatResponseChunk<object>>
- * @param sendEvent - (event: WorkflowEventData<unknown>) => void
- * @returns the final response text
- */
-export async function streamText(
-  generator: AsyncIterable<ChatResponseChunk<object>>,
-  sendEvent: (event: WorkflowEventData<unknown>) => void,
-) {
-  let response = "";
-
-  if (generator) {
-    // each message can have multiple text parts, so we need to use a unique id for each text part
-    const textPartId = randomUUID();
-
-    // send a start event for this text part
-    sendEvent(
-      textStartEvent.with({ id: textPartId, type: TEXT_START_PART_TYPE }),
-    );
-
-    // consume generator and send delta events
-    for await (const chunk of generator) {
-      response += chunk.delta;
-      sendEvent(
-        textDeltaEvent.with({
-          id: textPartId,
-          type: TEXT_DELTA_PART_TYPE,
-          delta: chunk.delta,
-        }),
-      );
-    }
-
-    // send an end event for this text part
-    sendEvent(textEndEvent.with({ id: textPartId, type: TEXT_END_PART_TYPE }));
-  }
-
-  return response;
-}
-
-/**
- * Extract the text content from LlamaIndex message content
- * @param message - The LlamaIndex message
+ * Extract the text content from Vercel AI ModelMessage content
+ * @param content - The ModelMessage content (string or array of parts)
  * @returns The text content of the message
  */
-export function getMessageTextContent(message: MessageContent) {
-  if (typeof message === "string") {
-    return message;
+export function getModelMessageTextContent(
+  content: ModelMessage["content"],
+): string {
+  if (typeof content === "string") {
+    return content;
   }
-  return message
-    .filter((part): part is MessageContentTextDetail => part.type === "text")
+  // Handle array content - filter for text parts
+  return content
+    .filter((part): part is TextPart => part.type === "text")
     .map((part) => part.text)
     .join("\n\n");
 }

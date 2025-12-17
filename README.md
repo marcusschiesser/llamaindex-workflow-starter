@@ -6,7 +6,7 @@ A Next.js starter template for running [LlamaIndex Workflows](https://developers
 
 This project is a hackable Next.js starter template that demonstrates how to:
 
-- Build an **Agentic RAG** (Retrieval-Augmented Generation) workflow using LlamaIndex
+- Build an **Agentic RAG** (Retrieval-Augmented Generation) workflow using [vectorstores.org](https://vectorstores.org/), [LlamaIndex Workflows](https://developers.llamaindex.ai/typescript/workflows/) and [Vercel AI SDK](https://ai-sdk.dev/docs)
 - Stream workflow events to a React frontend using the [Vercel AI SDK data part format](https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol#data-parts)
 - Render rich, interactive chat messages with sources, artifacts, and suggestions
 
@@ -25,10 +25,10 @@ npm install
 
 ### Environment Variables
 
-Create a `.env` file in the root directory:
+Set your OpenAI API key:
 
-```env
-OPENAI_API_KEY=your-openai-api-key
+```bash
+export OPENAI_API_KEY=your-openai-api-key
 ```
 
 ### Generating Embeddings
@@ -111,29 +111,29 @@ Learn more about message parts and how to render custom parts in the [Chat UI do
 Configure LLM and embedding models in [`app/api/chat/app/settings.ts`](app/api/chat/app/settings.ts):
 
 ```typescript
-import { OpenAI, OpenAIEmbedding } from "@llamaindex/openai";
-import { Settings } from "llamaindex";
+import { openai } from "@ai-sdk/openai";
+import { Settings } from "@vectorstores/core";
+import { embedMany } from "ai";
+
+export const llm = openai("gpt-5-mini");
 
 export function initSettings() {
-  Settings.llm = new OpenAI({
-    model: "gpt-4o-mini",
-    maxTokens: 2000,
-  });
-  Settings.embedModel = new OpenAIEmbedding({
-    model: "text-embedding-3-small",
-    dimensions: 1536,
-  });
+  Settings.embedFunc = async (input: string[]): Promise<number[][]> => {
+    const { embeddings } = await embedMany({
+      model: openai.embedding("text-embedding-3-small"),
+      values: input,
+    });
+    return embeddings;
+  };
 }
 ```
 
 Swap out OpenAI for other providers by modifying `settings.ts`:
 
 ```typescript
-import { Anthropic } from "@llamaindex/anthropic";
+import { anthropic } from "@ai-sdk/anthropic";
 
-Settings.llm = new Anthropic({
-  model: "claude-sonnet-4-20250514",
-});
+export const llm = anthropic("claude-sonnet-4-20250514");
 ```
 
 ## Learn More

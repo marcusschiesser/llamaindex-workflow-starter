@@ -1,6 +1,8 @@
-import { SimpleDirectoryReader } from "@llamaindex/readers/directory";
-import "dotenv/config";
-import { storageContextFromDefaults, VectorStoreIndex } from "llamaindex";
+import {
+  storageContextFromDefaults,
+  VectorStoreIndex,
+} from "@vectorstores/core";
+import { SimpleDirectoryReader } from "@vectorstores/readers/directory";
 import { initSettings } from "./app/settings";
 
 async function generateDatasource() {
@@ -20,20 +22,6 @@ async function generateDatasource() {
 }
 
 (async () => {
-  const args = process.argv.slice(2);
-  const command = args[0];
-
   initSettings();
-
-  if (command === "ui") {
-    console.error("This project doesn't use any custom UI.");
-    return;
-  } else {
-    if (command !== "datasource") {
-      console.error(
-        `Unrecognized command: ${command}. Generating datasource by default.`,
-      );
-    }
-    await generateDatasource();
-  }
+  await generateDatasource();
 })();

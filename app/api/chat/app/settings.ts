@@ -1,17 +1,15 @@
-import { OpenAI, OpenAIEmbedding } from "@llamaindex/openai";
-import { Settings } from "llamaindex";
+import { openai } from "@ai-sdk/openai";
+import { Settings } from "@vectorstores/core";
+import { embedMany } from "ai";
+
+export const llm = openai("gpt-5-mini");
 
 export function initSettings() {
-  Settings.llm = new OpenAI({
-    model: process.env.MODEL ?? "gpt-4o-mini",
-    maxTokens: process.env.LLM_MAX_TOKENS
-      ? Number(process.env.LLM_MAX_TOKENS)
-      : undefined,
-  });
-  Settings.embedModel = new OpenAIEmbedding({
-    model: process.env.EMBEDDING_MODEL ?? "text-embedding-3-small",
-    dimensions: process.env.EMBEDDING_DIM
-      ? parseInt(process.env.EMBEDDING_DIM)
-      : undefined,
-  });
+  Settings.embedFunc = async (input: string[]): Promise<number[][]> => {
+    const { embeddings } = await embedMany({
+      model: openai.embedding("text-embedding-3-small"),
+      values: input,
+    });
+    return embeddings;
+  };
 }
