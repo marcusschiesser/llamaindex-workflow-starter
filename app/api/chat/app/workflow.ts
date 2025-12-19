@@ -3,7 +3,6 @@ import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/s
 import type { Metadata, NodeWithScore } from "@vectorstores/core";
 import { formatLLM } from "@vectorstores/core";
 import { streamText, tool, type ModelMessage, type ToolCallPart } from "ai";
-import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
   generateNextQuestions,
@@ -112,26 +111,26 @@ export const workflowFactory = async () => {
     let response = "";
     const toolCalls: Map<string, ToolCallPart> = new Map();
 
-   let textPartId = "";
+    let textPartId = "";
 
     for await (const chunk of result.fullStream) {
-			if (chunk.type === "text-start") {
-				sendEvent(vercelTextEvent.with(chunk));
+      if (chunk.type === "text-start") {
+        sendEvent(vercelTextEvent.with(chunk));
         textPartId = chunk.id;
-			} else if (chunk.type === "text-delta") {
-				response += chunk.text;
-				sendEvent(
-					vercelTextEvent.with({
-						type: "text-delta",
-						id: chunk.id,
-						// needs to be delta!
-						delta: chunk.text,
-					}),
-				);
-			} else if (chunk.type === "tool-call") {
+      } else if (chunk.type === "text-delta") {
+        response += chunk.text;
+        sendEvent(
+          vercelTextEvent.with({
+            type: "text-delta",
+            id: chunk.id,
+            // needs to be delta!
+            delta: chunk.text,
+          }),
+        );
+      } else if (chunk.type === "tool-call") {
         toolCalls.set(chunk.toolCallId, chunk);
       }
-		}
+    }
 
     // Handle tool calls
     if (toolCalls.size > 0) {
