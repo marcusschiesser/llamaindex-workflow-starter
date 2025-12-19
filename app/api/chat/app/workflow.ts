@@ -10,9 +10,7 @@ import {
   runEvent,
   SUGGESTION_PART_TYPE,
   suggestionEvent,
-  textDeltaEvent,
-  textEndEvent,
-  textStartEvent,
+  vercelTextEvent,
 } from "../utils/parts";
 import { toSourceEvent } from "../utils/parts/sources";
 import { getIndex } from "./data";
@@ -27,12 +25,10 @@ type AgentWorkflowState = {
     result: string;
     isError: boolean;
   }>;
-  textPartId: string;
 };
 
 // Define workflow events
 export type StartEventData = {
-  userInput: string;
   chatHistory: ModelMessage[];
 };
 
@@ -90,17 +86,12 @@ export const workflowFactory = async () => {
   // Handler for processing user input and LLM responses
   workflow.handle([startEvent], async (context, event) => {
     const { sendEvent, state } = context;
-    const { userInput, chatHistory } = event.data;
+    const { chatHistory } = event.data;
 
     // Initialize state
     state.messages = [...chatHistory];
-    state.messages.push({
-      role: "user",
-      content: userInput,
-    });
     state.toolResponses = [];
     state.expectedToolCount = 0;
-    state.textPartId = randomUUID();
 
     // Trigger the continue event to start processing
     sendEvent(continueEvent.with(undefined));
@@ -109,7 +100,7 @@ export const workflowFactory = async () => {
   // Handler for continue event - calls LLM and processes response
   workflow.handle([continueEvent], async (context) => {
     const { sendEvent, state } = context;
-    const { messages, textPartId } = state;
+    const { messages } = state;
 
     // Call LLM with tools - use streaming via Vercel AI SDK
     const result = streamText({
@@ -121,28 +112,26 @@ export const workflowFactory = async () => {
     let response = "";
     const toolCalls: Map<string, ToolCallPart> = new Map();
 
-    sendEvent(
-      textStartEvent.with({
-        id: textPartId,
-        type: "text-start",
-      }),
-    );
+   let textPartId = "";
 
-    // Process stream using Vercel AI's fullStream
     for await (const chunk of result.fullStream) {
-      if (chunk.type === "text-delta") {
-        response += chunk.text;
-        sendEvent(
-          textDeltaEvent.with({
-            id: textPartId,
-            type: "text-delta",
-            delta: chunk.text,
-          }),
-        );
-      } else if (chunk.type === "tool-call") {
+			if (chunk.type === "text-start") {
+				sendEvent(vercelTextEvent.with(chunk));
+        textPartId = chunk.id;
+			} else if (chunk.type === "text-delta") {
+				response += chunk.text;
+				sendEvent(
+					vercelTextEvent.with({
+						type: "text-delta",
+						id: chunk.id,
+						// needs to be delta!
+						delta: chunk.text,
+					}),
+				);
+			} else if (chunk.type === "tool-call") {
         toolCalls.set(chunk.toolCallId, chunk);
       }
-    }
+		}
 
     // Handle tool calls
     if (toolCalls.size > 0) {
@@ -175,7 +164,7 @@ export const workflowFactory = async () => {
 
       // Send text end event
       sendEvent(
-        textEndEvent.with({
+        vercelTextEvent.with({
           id: textPartId,
           type: "text-end",
         }),
@@ -321,6 +310,5 @@ export const workflowFactory = async () => {
     expectedToolCount: 0,
     messages: [],
     toolResponses: [],
-    textPartId: "",
   });
 };

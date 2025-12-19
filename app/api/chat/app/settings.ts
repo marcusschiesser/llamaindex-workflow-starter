@@ -2,7 +2,7 @@ import { openai } from "@ai-sdk/openai";
 import { Settings } from "@vectorstores/core";
 import { embedMany } from "ai";
 
-export const llm = openai("gpt-5-mini");
+export const llm = openai("gpt-4o");
 
 export function initSettings() {
   Settings.embedFunc = async (input: string[]): Promise<number[][]> => {

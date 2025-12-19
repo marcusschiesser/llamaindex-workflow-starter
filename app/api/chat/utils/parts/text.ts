@@ -5,25 +5,41 @@ export const TEXT_START_PART_TYPE = "text-start";
 export const TEXT_DELTA_PART_TYPE = "text-delta";
 export const TEXT_END_PART_TYPE = "text-end";
 
-export type TextStartPart = {
+type TextStartPart = {
   type: typeof TEXT_START_PART_TYPE;
   id: string;
 };
 
-export type TextDeltaPart = {
+type TextDeltaPart = {
   type: typeof TEXT_DELTA_PART_TYPE;
   id: string;
   delta: string;
 };
 
-export type TextEndPart = {
+type TextEndPart = {
   type: typeof TEXT_END_PART_TYPE;
   id: string;
 };
 
-export const textStartEvent = workflowEvent<TextStartPart>(); // this event must be triggered before streaming text
-export const textDeltaEvent = workflowEvent<TextDeltaPart>(); // equal to agentStreamEvent but using TextDeltaPart format
-export const textEndEvent = workflowEvent<TextEndPart>(); // this event must be triggered after streaming text
+export type VercelTextPart = TextStartPart | TextDeltaPart | TextEndPart;
+
+export const vercelTextEvent = workflowEvent<VercelTextPart>();
+
+/**
+ * Check if the data is a Vercel text event part
+ * @param data - The data to check
+ * @returns True if the data is a Vercel text event part
+ */
+export function isVercelTextEvent(data: unknown): data is VercelTextPart {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "type" in data &&
+    [TEXT_START_PART_TYPE, TEXT_DELTA_PART_TYPE, TEXT_END_PART_TYPE].includes(
+      (data as { type: string }).type,
+    )
+  );
+}
 
 /**
  * Extract the text content from Vercel AI ModelMessage content

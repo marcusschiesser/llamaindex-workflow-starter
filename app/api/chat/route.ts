@@ -3,7 +3,7 @@ import { convertToModelMessages, type ModelMessage } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { initSettings } from "./app/settings";
 import { startEvent, stopEvent, workflowFactory } from "./app/workflow";
-import { ServerAdapter } from "./utils";
+import { transformToVercel } from "./utils";
 
 initSettings();
 
@@ -24,9 +24,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const userInput = lastMessage.parts.find(
-      (part) => part.type === "text" && "text" in part,
-    )?.text as string;
     const chatHistory: ModelMessage[] = convertToModelMessages(messages);
 
     // create workflow and context
@@ -34,7 +31,6 @@ export async function POST(req: NextRequest) {
     // send start event
     context.sendEvent(
       startEvent.with({
-        userInput,
         chatHistory,
       }),
     );
@@ -47,12 +43,11 @@ export async function POST(req: NextRequest) {
 
     // get workflow stream from workflow context
     const workflowStream = context.stream.until(
-      (event: any) =>
-        abortController.signal.aborted || stopEvent.include(event),
+      (event) => abortController.signal.aborted || stopEvent.include(event),
     );
 
     // transform workflow stream to SSE format
-    const stream = workflowStream.pipeThrough(ServerAdapter.transformToSSE());
+    const stream = workflowStream.pipeThrough(transformToVercel());
 
     return new Response(stream, {
       status: 200,

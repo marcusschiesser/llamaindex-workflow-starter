@@ -34,13 +34,13 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.87",
-    "@ai-sdk/react": "^2.0.4",
+    "@ai-sdk/openai": "^2.0.88",
+    "@ai-sdk/react": "^2.0.117",
     "@llamaindex/chat-ui": "latest",
     "@llamaindex/workflow-core": "~1.3.3",
     "@vectorstores/core": "^0.1.2",
     "@vectorstores/readers": "^0.1.2",
-    "ai": "^5.0.4",
+    "ai": "^5.0.115",
     "clsx": "^2.1.1",
     "lucide-react": "^0.460.0",
     "next": "^16.0.10",
